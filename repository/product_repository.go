@@ -16,7 +16,7 @@ func NewProductRepository(connection *sql.DB) *ProductRepository {
 func (pr *ProductRepository) GetProducts() ([]model.Product, error) {
 	query := "SELECT * FROM product"
 	rows, err := pr.connection.Query(query)
-	if(err != nil) {
+	if err != nil {
 		panic(err)
 	}
 
@@ -25,7 +25,7 @@ func (pr *ProductRepository) GetProducts() ([]model.Product, error) {
 	for rows.Next() {
 		product := model.Product{}
 		err = rows.Scan(&product.ID, &product.Name, &product.Price)
-		if(err != nil) {
+		if err != nil {
 			panic(err)
 		}
 
@@ -34,4 +34,24 @@ func (pr *ProductRepository) GetProducts() ([]model.Product, error) {
 	rows.Close()
 
 	return products, nil
+}
+
+func (pr *ProductRepository) CreateProduct(product model.Product) (int, error) {
+
+	var id int
+	query, err := pr.connection.Prepare("INSERT INTO product" +
+		" (product_name, price)" +
+		"VALUES ($1, $2) RETURNING id")
+	if err != nil {
+		print(err)
+		return 0, err
+	}
+
+	err = query.QueryRow(product.Name, product.Price).Scan(&id)
+	if err != nil {
+		print(err)
+		return 0, err
+	}
+
+	return id, nil
 }

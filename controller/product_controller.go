@@ -1,7 +1,9 @@
 package controller
 
 import (
+	"go-api/model"
 	"go-api/usecase"
+	"go-api/validator"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
@@ -9,6 +11,11 @@ import (
 
 type productController struct {
 	productUsecase usecase.ProductUsecase
+}
+
+type CreateProductRequest struct {
+	product_name string  `json:"product_name" binding:"required"`
+	price        float64 `json:"price" binding:"required,gt=0"`
 }
 
 func NewProductController(usecase usecase.ProductUsecase) *productController {
@@ -25,4 +32,26 @@ func (p *productController) GetProducts(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"products": products})
+}
+
+func (p *productController) CreateProduct(c *gin.Context) {
+	var req CreateProductRequest
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validator.ValidateRequest(err, c)
+		return
+	}
+	
+	product := model.Product{
+		Name:        req.product_name,
+		Price:       req.price,
+	}
+
+	insertedProduct, err := p.productUsecase.CreateProduct(product)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"data": insertedProduct})
 }
