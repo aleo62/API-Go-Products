@@ -55,3 +55,25 @@ func (pr *ProductRepository) CreateProduct(product model.Product) (int, error) {
 
 	return id, nil
 }
+
+func (pr *ProductRepository) DeleteProduct(id int) (bool, error) {
+	query, err := pr.connection.Prepare("DELETE FROM product WHERE id = $1")
+	if err != nil {
+		print(err)
+		return false, err
+	}
+
+	result, err := query.Exec(id)
+	if err != nil {
+		print(err)
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		print(err)
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}

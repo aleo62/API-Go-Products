@@ -9,8 +9,6 @@ type ProductUsecase struct {
 	repository repository.ProductRepository
 }
 
-
-
 func NewProductUsecase(repository repository.ProductRepository) *ProductUsecase {
 	return &ProductUsecase{repository: repository}
 }
@@ -27,4 +25,13 @@ func (pu ProductUsecase) CreateProduct(product model.Product) (model.Product, er
 	
 	product.ID = id
 	return product, nil
+}
+
+func (pu ProductUsecase) DeleteProduct(id int) (bool, error) {
+	ok, err := pu.repository.DeleteProduct(id)
+	if err != nil {
+		return false, err
+	}
+	
+	return ok, nil
 }

@@ -5,6 +5,7 @@ import (
 	"go-api/usecase"
 	"go-api/validator"
 	"net/http"
+	"strconv"
 
 	"github.com/gin-gonic/gin"
 )
@@ -14,8 +15,8 @@ type productController struct {
 }
 
 type CreateProductRequest struct {
-	product_name string  `json:"product_name" binding:"required"`
-	price        float64 `json:"price" binding:"required,gt=0"`
+	product_name  string   `json:"product_name" binding:"required"`
+	price         float64  `json:"price" binding:"required,gt=0"`
 }
 
 func NewProductController(usecase usecase.ProductUsecase) *productController {
@@ -54,4 +55,24 @@ func (p *productController) CreateProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"data": insertedProduct})
+}
+
+func (p *productController) DeleteProduct(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        panic(err)
+    }
+	
+	ok, err := p.productUsecase.DeleteProduct(id)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, err)
+		return
+	}
+	
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": ok, "message": "Product deleted successfully"})
 }
