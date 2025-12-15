@@ -2,7 +2,9 @@ package repository
 
 import (
 	"database/sql"
+	"fmt"
 	"go-api/model"
+	"strconv"
 )
 
 type ProductRepository struct {
@@ -64,6 +66,52 @@ func (pr *ProductRepository) DeleteProduct(id int) (bool, error) {
 	}
 
 	result, err := query.Exec(id)
+	if err != nil {
+		print(err)
+		return false, err
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		print(err)
+		return false, err
+	}
+
+	return rowsAffected > 0, nil
+}
+
+func (pr *ProductRepository) UpdateProduct(id int, fields map[string]interface{}) (bool, error) {
+	var queryString string
+	var index int
+	args := []interface{}{}
+	
+	print(len(fields))
+
+	allowed := []string{"product_name", "price"}
+
+	for _, k := range allowed {
+		v, ok := fields[k]
+		if !ok {
+			continue
+		}
+		if index > 0 {
+			queryString += ", "
+		}
+
+		queryString += fmt.Sprintf("%s = $%d", k, index+1)
+		index++
+		args = append(args, v)
+	}
+
+	query, err := pr.connection.Prepare("UPDATE product SET " + queryString + " WHERE id = $" + strconv.Itoa(index+1))
+	print(index)
+	if err != nil {
+		print(err)
+		return false, err
+	}
+
+	args = append(args, id)
+	result, err := query.Exec(args...)
 	if err != nil {
 		print(err)
 		return false, err

@@ -15,9 +15,10 @@ type productController struct {
 }
 
 type CreateProductRequest struct {
-	product_name  string   `json:"product_name" binding:"required"`
-	price         float64  `json:"price" binding:"required,gt=0"`
+	ProductName  string   `json:"product_name" binding:"required"`
+	Price        float64  `json:"price" binding:"required,gt=0"`
 }
+
 
 func NewProductController(usecase usecase.ProductUsecase) *productController {
 	return &productController{
@@ -44,8 +45,8 @@ func (p *productController) CreateProduct(c *gin.Context) {
 	}
 	
 	product := model.Product{
-		Name:        req.product_name,
-		Price:       req.price,
+		Name:        req.ProductName,
+		Price:       req.Price,
 	}
 
 	insertedProduct, err := p.productUsecase.CreateProduct(product)
@@ -75,4 +76,31 @@ func (p *productController) DeleteProduct(c *gin.Context) {
 	}
 
 	c.JSON(http.StatusOK, gin.H{"ok": ok, "message": "Product deleted successfully"})
+}
+
+func (p *productController) UpdateProduct(c *gin.Context) {
+	id, err := strconv.Atoi(c.Param("id"))
+    if err != nil {
+        panic(err)
+    }
+	
+	var req usecase.UpdateProductRequest
+	
+	if err := c.ShouldBindJSON(&req); err != nil {
+		validator.ValidateRequest(err, c)
+		return
+	}
+
+	ok, err := p.productUsecase.UpdateProduct(id, req)
+	if err != nil {
+		c.JSON(http.StatusInternalServerError, gin.H{"error": err.Error()})
+		return
+	}
+	
+	if !ok {
+		c.JSON(http.StatusNotFound, gin.H{"error": "Product not found"})
+		return
+	}
+
+	c.JSON(http.StatusOK, gin.H{"ok": ok, "message": "Product updated successfully"})
 }
